@@ -30,12 +30,6 @@ type FileInfo struct {
 	Time  time.Time
 }
 
-type ForwardCmdResponse struct {
-	Code    int32
-	Msg     string
-	Results []string
-}
-
 type MachineState struct {
 	Ip     string
 	Time   time.Time
@@ -47,4 +41,36 @@ type RequestForwardCmdReq struct {
 	AddrList []string
 	Command  string
 	LimitMB  int // the size of result
+}
+
+type ResponseForwardCmdReq struct {
+	Code    int32
+	Msg     string
+	Results []string
+}
+
+type RequestSearch struct {
+	Query   string
+	Fields  string
+	DBAddr  string
+	DBTable string
+}
+
+type ResponseSearch struct {
+	Code int32
+	Msg  string
+	Hits []interface{}
+}
+
+type ResponseCDB struct {
+	Code  int32
+	Total int32
+	Hits  []interface{}
+	Info  CDBInfo
+}
+
+type CDBInfo struct {
+	Success int32
+	Error   int32
+	Message string
 }

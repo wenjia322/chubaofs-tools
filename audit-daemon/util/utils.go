@@ -51,7 +51,28 @@ func WriteMeta(metaPath string, meta interface{}) {
 	}
 }
 
-func Send(url string, request interface{}) ([]byte, error) {
+func SendDaemonReq(url string, request interface{}) ([]byte, error) {
+	body, err := SendRequest(url, request)
+	if err != nil {
+		LOG.Errorf("send request[%s]: err: [%s]", url, err.Error())
+		return nil, err
+	}
+
+	var resp Response
+	if err = json.Unmarshal(body, &resp); err != nil {
+		LOG.Errorf("send request[%s]: unmarshal err: [%s]", url, err.Error())
+		return nil, err
+	}
+
+	if resp.Code > 0 {
+		LOG.Warningf("send request[%s]: response code: [%v]", url, resp.Code)
+		return nil, fmt.Errorf(resp.Msg)
+	}
+
+	return resp.Data, nil
+}
+
+func SendRequest(url string, request interface{}) ([]byte, error) {
 	if url[:7] != "http://" {
 		url = "http://" + url
 	}
@@ -88,19 +109,7 @@ func Send(url string, request interface{}) ([]byte, error) {
 		LOG.Errorf("send request[%s]: read body err: [%s]", url, err.Error())
 		return nil, err
 	}
-
-	var resp Response
-	if err = json.Unmarshal(all, &resp); err != nil {
-		LOG.Errorf("send request[%s]: unmarshal err: [%s]", url, err.Error())
-		return nil, err
-	}
-
-	if resp.Code > 0 {
-		LOG.Warningf("send request[%s]: response code: [%v]", url, resp.Code)
-		return nil, fmt.Errorf(resp.Msg)
-	}
-
-	return resp.Data, nil
+	return all, nil
 }
 
 func ReadReq(r *http.Request, req interface{}) error {

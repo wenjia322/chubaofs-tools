@@ -69,7 +69,7 @@ type OpKvData struct {
 var chubaodbAddr string
 var offsetMeta map[uint64]int64 // record offset of log file and raft file: inode -> offset (has read)
 
-func StartRaftParse(logDir string, dbAddr string) (err error) {
+func StartRaftParse(logDir string, dbAddr, dbTable string) (err error) {
 
 	if _, err = os.Stat(logDir); os.IsNotExist(err) {
 		if err = os.MkdirAll(logDir, os.ModePerm); err != nil {
@@ -77,7 +77,7 @@ func StartRaftParse(logDir string, dbAddr string) (err error) {
 		}
 	}
 
-	chubaodbAddr = dbAddr
+	chubaodbAddr = fmt.Sprintf("%v/put/%v", dbAddr, dbTable)
 	var logFileInfos []*FileInfo
 	for {
 		if Stop {

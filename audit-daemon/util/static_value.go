@@ -11,6 +11,7 @@ const (
 	PathListFile   = "/list_file"
 	PathCommand    = "/command"
 	PathForwardCmd = "/forward"
+	PathSearchDB   = "/search"
 )
 
 const (
