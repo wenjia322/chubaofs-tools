@@ -51,8 +51,8 @@ func WriteMeta(metaPath string, meta interface{}) {
 	}
 }
 
-func SendDaemonReq(url string, request interface{}) ([]byte, error) {
-	body, err := SendRequest(url, request)
+func SendDaemonReq(method, url string, request interface{}) ([]byte, error) {
+	body, err := SendRequest(method, url, request)
 	if err != nil {
 		LOG.Errorf("send request[%s]: err: [%s]", url, err.Error())
 		return nil, err
@@ -72,7 +72,7 @@ func SendDaemonReq(url string, request interface{}) ([]byte, error) {
 	return resp.Data, nil
 }
 
-func SendRequest(url string, request interface{}) ([]byte, error) {
+func SendRequest(method, url string, request interface{}) ([]byte, error) {
 	if url[:7] != "http://" {
 		url = "http://" + url
 	}
@@ -82,8 +82,8 @@ func SendRequest(url string, request interface{}) ([]byte, error) {
 		LOG.Errorf("send request[%s]: marshal err: [%s]", url, err.Error())
 		return nil, err
 	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	LOG.Debugf("send url: %v", url)
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	if err != nil {
 		LOG.Errorf("send request[%s]: new request err: [%s]", url, err.Error())
 		return nil, err

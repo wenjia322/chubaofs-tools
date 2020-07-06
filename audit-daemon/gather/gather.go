@@ -146,7 +146,7 @@ func (j *Job) appendFile(w *Worker, meta map[uint64]uint64, local, remote *FileI
 
 		var start = local.Size
 		for {
-			respData, err := SendDaemonReq(w.addr+PathReadFile, &RequestGetContent{
+			respData, err := SendDaemonReq("POST", w.addr+PathReadFile, &RequestGetContent{
 				Dir:     j.src,
 				Name:    remote.Name,
 				Pattern: j.pattern,
@@ -211,7 +211,7 @@ func (j *Job) createFile(w *Worker, meta map[uint64]uint64, remote *FileInfo) er
 
 	var start int64
 	for {
-		respData, err := SendDaemonReq(w.addr+PathReadFile, &RequestGetContent{
+		respData, err := SendDaemonReq("POST", w.addr+PathReadFile, &RequestGetContent{
 			Dir:     j.src,
 			Name:    remote.Name,
 			Pattern: j.pattern,
@@ -349,7 +349,7 @@ func (w *Worker) remoteFiles(dir, pattern string) ([]*FileInfo, error) {
 		Pattern: pattern,
 	}
 
-	respData, err := SendDaemonReq(w.addr+PathListFile, &req)
+	respData, err := SendDaemonReq("POST", w.addr+PathListFile, &req)
 	if err != nil {
 		return nil, err
 	}
