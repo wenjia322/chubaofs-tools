@@ -51,15 +51,16 @@ type ResponseForwardCmdReq struct {
 
 type RequestSearch struct {
 	Query   string
-	Fields  string
+	Size    int8
 	DBAddr  string
 	DBTable string
 }
 
 type ResponseSearch struct {
-	Code int32
-	Msg  string
-	Hits []interface{}
+	Code  int32
+	Msg   string
+	Total int32
+	Hits  []interface{}
 }
 
 type ResponseCDB struct {
