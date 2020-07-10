@@ -3,13 +3,11 @@ package gather
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
-	"regexp"
 	"sort"
 	"strings"
 	"syscall"
@@ -368,61 +366,6 @@ func (w *Worker) remoteFiles(dir, pattern string) ([]*FileInfo, error) {
 	return list, nil
 }
 
-func parseConfig(configPath string) {
-	ipSyncMap = make(map[string]string)
-	all, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		panic(fmt.Sprintf("read %s has err:[%s]", configPath, err.Error()))
-	}
-
-	reg := regexp.MustCompile(`\s+`)
-	for _, line := range strings.Split(string(all), "\n") {
-		line = strings.TrimSpace(line)
-
-		if len(line) == 0 {
-			continue
-		}
-
-		if strings.TrimSpace(line)[0] == '#' {
-			continue
-		}
-
-		split := reg.Split(line, -1)
-
-		if _, found := workers[split[0]]; !found {
-			workers[split[0]] = &Worker{
-				addr: split[0],
-			}
-		}
-
-		wk := workers[split[0]]
-
-		wk.jobs = append(wk.jobs, &Job{
-			src:     split[1],
-			pattern: split[2],
-			dist:    split[3],
-		})
-
-		if fi, err := os.Stat(split[3]); err != nil {
-			if os.IsNotExist(err) {
-				if err := os.MkdirAll(split[3], os.ModePerm); err != nil {
-					panic(err)
-				}
-				if err := os.MkdirAll(path.Join(split[3], "archive"), os.ModePerm); err != nil {
-					panic(err)
-				}
-			} else {
-				panic(err)
-			}
-		} else if !fi.IsDir() {
-			panic(fmt.Sprintf("%s is not dir", split[3]))
-		}
-
-		ipSyncMap[split[3]] = split[0]
-
-	}
-}
-
 func formatJsonLogMessage(opType int, inode uint64, src, dir, filename string, size int64) string {
 	var (
 		bytes []byte
@@ -439,4 +382,26 @@ func formatJsonLogMessage(opType int, inode uint64, src, dir, filename string, s
 		return ""
 	}
 	return string(bytes)
+}
+
+func remoteDirs(addr, dir, exclusion string) ([]string, error) {
+	LOG.Debugf("list remote dir: addr[%v], dir[%v], exclusion[%v]", addr, dir, exclusion)
+
+	var subDirs []string
+
+	req := RequestListDir{
+		Dir:       dir,
+		Exclusion: exclusion,
+	}
+
+	respData, err := SendDaemonReq("POST", addr+PathListDir, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(respData, &subDirs); err != nil {
+		return nil, err
+	}
+
+	return subDirs, nil
 }

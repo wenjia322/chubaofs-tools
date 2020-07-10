@@ -21,7 +21,8 @@ import (
 func StartServer(port int) {
 	mux := http.NewServeMux()
 	mux.HandleFunc(PathReadFile, readFile)
-	mux.HandleFunc(PathListFile, listDir)
+	mux.HandleFunc(PathListFile, listFiles)
+	mux.HandleFunc(PathListDir, listDir)
 	mux.HandleFunc(PathCommand, execCommand)
 
 	// todo implement
@@ -102,7 +103,7 @@ func monitor() (*MachineState, error) {
 	return ms, nil
 }
 
-func listDir(w http.ResponseWriter, r *http.Request) {
+func listFiles(w http.ResponseWriter, r *http.Request) {
 	var req RequestListFile
 	if err := ReadReq(r, &req); err != nil {
 		SendErr(w, err)
@@ -116,6 +117,34 @@ func listDir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	marshal, err := json.Marshal(list)
+	if err != nil {
+		SendErr(w, err)
+		return
+	}
+	resp, _ := json.Marshal(&Response{
+		Code: 0,
+		Data: marshal,
+	})
+
+	if _, err := w.Write(resp); err != nil {
+		LOG.Errorf("write to server has err:[%s]", err.Error())
+	}
+}
+
+func listDir(w http.ResponseWriter, r *http.Request) {
+	var req RequestListDir
+	if err := ReadReq(r, &req); err != nil {
+		SendErr(w, err)
+		return
+	}
+
+	dirs, err := traverseDir(req.Dir, req.Exclusion)
+	if err != nil {
+		SendErr(w, err)
+		return
+	}
+
+	marshal, err := json.Marshal(dirs)
 	if err != nil {
 		SendErr(w, err)
 		return
@@ -290,4 +319,20 @@ func listFile(dir, pattern string) ([]*FileInfo, error) {
 		})
 	}
 	return list, nil
+}
+
+// only traverse one layer
+func traverseDir(dir, exclusion string) ([]string, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		LOG.Errorf("traverse dir: read dir err[%s]", err.Error())
+		return nil, err
+	}
+	subDirs := make([]string, 0)
+	for _, f := range files {
+		if f.IsDir() && f.Name() != exclusion {
+			subDirs = append(subDirs, f.Name())
+		}
+	}
+	return subDirs, nil
 }

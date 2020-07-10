@@ -9,6 +9,7 @@ const TimeFormat = "2006-01-02 15:04:05"
 const (
 	PathReadFile   = "/read_file"
 	PathListFile   = "/list_file"
+	PathListDir    = "/list_dir"
 	PathCommand    = "/command"
 	PathForwardCmd = "/forward"
 	PathSearchDB   = "/search"

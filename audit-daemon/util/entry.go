@@ -17,6 +17,11 @@ type RequestListFile struct {
 	Pattern string
 }
 
+type RequestListDir struct {
+	Dir       string
+	Exclusion string
+}
+
 type RequestCommand struct {
 	Dir     string
 	Command string

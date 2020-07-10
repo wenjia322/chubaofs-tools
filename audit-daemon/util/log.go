@@ -9,7 +9,8 @@ import (
 
 var LOG = logging.MustGetLogger("audit-daemon")
 
-func ConfigLog(module string, logLevel string) {
+func ConfigLog(logDir, module, logLevel string) {
+	logPrintDir := logDir + module
 	level, err := logging.LogLevel(logLevel)
 	if err != nil {
 		panic(err)
@@ -21,14 +22,14 @@ func ConfigLog(module string, logLevel string) {
 
 	var infoLogBackend logging.Backend
 	if module == "gather" {
-		infoLogBackend = SetLogFileLevel("./log/synclog/log_info.log", logging.INFO, logging.DefaultFormatter)
+		infoLogBackend = SetLogFileLevel(logDir+"synclog/log_info.log", logging.INFO, logging.DefaultFormatter)
 	} else {
-		infoLogBackend = SetLogFileLevel("./log/"+module+"/log_info.log", logging.INFO, logging.DefaultFormatter)
+		infoLogBackend = SetLogFileLevel(logPrintDir+"/log_info.log", logging.INFO, logging.DefaultFormatter)
 	}
-	warnLogBackend := SetLogFileLevel("./log/"+module+"/log_warn.log", logging.WARNING, format)
-	errorLogBackend := SetLogFileLevel("./log/"+module+"/log_error.log", logging.ERROR, format)
+	warnLogBackend := SetLogFileLevel(logPrintDir+"/log_warn.log", logging.WARNING, format)
+	errorLogBackend := SetLogFileLevel(logPrintDir+"/log_error.log", logging.ERROR, format)
 	if level == logging.DEBUG {
-		debugLogBackend := SetLogFileLevel("./log/"+module+"/log_debug.log", logging.DEBUG, format)
+		debugLogBackend := SetLogFileLevel(logPrintDir+"/log_debug.log", logging.DEBUG, format)
 		logging.SetBackend(infoLogBackend, debugLogBackend, warnLogBackend, errorLogBackend)
 	} else {
 		logging.SetBackend(infoLogBackend, warnLogBackend, errorLogBackend)
