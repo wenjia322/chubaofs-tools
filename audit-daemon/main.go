@@ -39,7 +39,7 @@ func main() {
 		}
 
 		gather.StartGather(*config)
-		util.LOG.Fatal(gather.StartRaftParse(*logDir+"synclog/", *dbAddr, *dbTable))
+		util.LOG.Fatal(gather.StartRaftParse(*logDir+"synclog", *dbAddr, *dbTable))
 	case "daemon":
 		daemon.StartServer(*port)
 	case "server":
