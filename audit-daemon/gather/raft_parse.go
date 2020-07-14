@@ -333,7 +333,7 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (rea
 		crc := binary.BigEndian.Uint32(dataTemp[crcOffset : crcOffset+4])
 		addRaftItemMap(raftItemMap, recordType, dataSize, opType, term, index, crc)
 		raftItemMap["NodeIP"] = ip
-		raftItemMap["insert_time"] = time.Now().Unix()
+		raftItemMap["insert_time"] = time.Now().UnixNano() / 1e6
 		if valBytes, err = json.Marshal(raftItemMap); err != nil {
 			LOG.Errorf("cmd single map value json marshal error: [%v], map[%v]", err, raftItemMap)
 			return
