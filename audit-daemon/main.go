@@ -13,7 +13,7 @@ var (
 	module   = flag.String("module", "", "start module about 'gather', 'daemon' , 'server'")
 	port     = flag.Int("port", 8080, "Port Settings for the service")
 	logLevel = flag.String("log_level", "debug", "log level")
-	logDir   = flag.String("log_dir", "", "log directory")
+	logDir   = flag.String("log_dir", "./log/", "log directory")
 
 	//gather need config
 	config  = flag.String("gather_conf", "", "gather module config path")
@@ -24,9 +24,6 @@ var (
 func main() {
 	flag.Parse()
 
-	if *logDir == "" {
-		*logDir = "./log/"
-	}
 	util.ConfigLog(*logDir, *module, *logLevel)
 
 	switch *module {
