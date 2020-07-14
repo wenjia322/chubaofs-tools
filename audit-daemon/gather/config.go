@@ -44,7 +44,7 @@ func parseConfig(configPath string) {
 		wk := workers[ipAddr]
 
 		var subDirs []string
-		if subDirs, err = remoteDirs(ipAddr, srcDir, exclusionDir); err != nil {
+		if subDirs, err = remoteDirs(ipAddr, srcDir, exclusionDir); err != nil { // exclude dir "logs"
 			panic(fmt.Sprintf("list remote dir err: addr[%s], dir[%s], err[%s]", ipAddr, srcDir, err.Error()))
 		}
 

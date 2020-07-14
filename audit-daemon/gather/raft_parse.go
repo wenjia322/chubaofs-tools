@@ -333,6 +333,7 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (rea
 		crc := binary.BigEndian.Uint32(dataTemp[crcOffset : crcOffset+4])
 		addRaftItemMap(raftItemMap, recordType, dataSize, opType, term, index, crc)
 		raftItemMap["NodeIP"] = ip
+		raftItemMap["insert_time"] = time.Now().Unix()
 		if valBytes, err = json.Marshal(raftItemMap); err != nil {
 			LOG.Errorf("cmd single map value json marshal error: [%v], map[%v]", err, raftItemMap)
 			return
@@ -445,7 +446,7 @@ func parseMetaOp(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) 
 }
 
 func sendRaftItem(inodeID uint64, offset uint64, body []byte) (err error) {
-	url := "http://" + chubaodbAddr + "/" + strconv.FormatUint(inodeID, 10) + "_" + strconv.FormatUint(offset, 10)
+	url := fmt.Sprintf("http://%v/%v_%v", chubaodbAddr, strconv.FormatUint(inodeID, 10), strconv.FormatUint(offset, 10))
 	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
 		LOG.Errorf("send raft item request[%s]: new request err: [%s]", url, err.Error())
