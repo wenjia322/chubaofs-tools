@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const exclusionDir = "log"
+const exclusionDir = "logs"
 
 func parseConfig(configPath string) {
 	ipSyncMap = make(map[string]string)
