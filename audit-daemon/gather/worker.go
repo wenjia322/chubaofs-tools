@@ -1,7 +1,6 @@
 package gather
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"time"
