@@ -50,7 +50,8 @@ func (w *Worker) updateJobs() {
 	var subDirs []string
 	var err error
 	if subDirs, err = remoteDirs(w.addr, srcDir, exclusionDir); err != nil { // exclude dir "logs"
-		panic(fmt.Sprintf("list remote dir err: addr[%s], dir[%s], err[%s]", w.addr, srcDir, err.Error()))
+		util.LOG.Errorf("list remote dir err: addr[%s], dir[%s], err[%s]", w.addr, srcDir, err.Error())
+		return
 	}
 
 	for _, subDir := range subDirs {
@@ -65,25 +66,29 @@ func (w *Worker) updateJobs() {
 
 func (w *Worker) createJob(srcSubDir, dstSubDir string) {
 	util.LOG.Debugf("create new job: addr[%v], src[%v], dst[%v], pattern[%v]", w.addr, srcSubDir, dstSubDir, w.pattern)
+	if fi, err := os.Stat(dstSubDir); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(dstSubDir, os.ModePerm); err != nil {
+				util.LOG.Errorf("make dir err: dir[%s], err[%s]", dstSubDir, err.Error())
+				return
+			}
+			if err := os.MkdirAll(path.Join(dstSubDir, "archive"), os.ModePerm); err != nil {
+				util.LOG.Errorf("make dir err: dir[%s], err[%s]", path.Join(dstSubDir, "archive"), err.Error())
+				return
+			}
+		} else {
+			util.LOG.Errorf("stat dir err: dir[%s], err[%s]", dstSubDir, err.Error())
+			return
+		}
+	} else if !fi.IsDir() {
+		util.LOG.Errorf("make dir err: [%s] is not dir", dstSubDir)
+		return
+	}
+
 	w.jobs[srcSubDir] = &Job{
 		src:     srcSubDir,
 		pattern: w.pattern,
 		dist:    dstSubDir,
 	}
-	if fi, err := os.Stat(dstSubDir); err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(dstSubDir, os.ModePerm); err != nil {
-				panic(err)
-			}
-			if err := os.MkdirAll(path.Join(dstSubDir, "archive"), os.ModePerm); err != nil {
-				panic(err)
-			}
-		} else {
-			panic(err)
-		}
-	} else if !fi.IsDir() {
-		panic(fmt.Sprintf("%s is not dir", dstSubDir))
-	}
-
 	ipSyncMap[dstSubDir] = w.addr
 }
