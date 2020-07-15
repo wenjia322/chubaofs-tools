@@ -79,13 +79,14 @@ func StartRaftParse(logDir string, dbAddr, dbTable string) (err error) {
 
 	chubaodbAddr = fmt.Sprintf("%v/put/%v", dbAddr, dbTable)
 	var logFileInfos []*FileInfo
+	// continue execution if report error
 	for {
 		if Stop {
 			break
 		}
 		if offsetMeta, logFileInfos, err = loadSyncLogFile(logDir); err != nil {
 			LOG.Errorf("load sync log files err: [%v], dir [%v]", err, logDir)
-			return err
+			continue
 		}
 		for _, logFileInfo := range logFileInfos {
 			var (
@@ -95,21 +96,21 @@ func StartRaftParse(logDir string, dbAddr, dbTable string) (err error) {
 			)
 			if file, err = os.Open(path.Join(logDir, logFileInfo.Name)); err != nil {
 				LOG.Errorf("start parse raft files: open log file [%v] err [%v]", path.Join(logDir, logFileInfo.Name), err)
-				return err
+				continue
 			}
 			if startOffset, exist = offsetMeta[logFileInfo.Inode]; !exist {
 				startOffset = 0
 			}
 			if err = readLogFile(file, startOffset); err != nil && err != io.EOF {
 				LOG.Errorf("start parse raft files: read log file [%v] err [%v]", path.Join(logDir, logFileInfo.Name), err)
-				return err
+				continue
 			}
 			offsetMeta[logFileInfo.Inode] = logFileInfo.Size //record next read offset. todo: read bytes len
 			_ = file.Close()
 		}
 		WriteMeta(path.Join(logDir, OffsetMetaFile), offsetMeta)
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(60 * time.Second)
 
 	}
 	return nil

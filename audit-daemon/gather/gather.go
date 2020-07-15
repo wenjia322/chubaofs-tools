@@ -14,13 +14,6 @@ import (
 	"time"
 )
 
-var ipSyncMap map[string]string // key: The path to store the synchronization file, value: ip of machine which did the file come from
-
-type Worker struct {
-	addr string
-	jobs []*Job
-}
-
 type MyError struct {
 	error
 	name string
@@ -46,28 +39,6 @@ func StartGather(configPath string) {
 		}(w)
 	}
 	LOG.Debug("all workers has stopped")
-}
-
-type Job struct {
-	src     string
-	dist    string
-	pattern string
-}
-
-var workers = make(map[string]*Worker)
-
-func toWork(w *Worker) {
-
-	for {
-		if Stop {
-			break
-		}
-		for _, job := range w.jobs {
-			w.toJob(job)
-		}
-
-		time.Sleep(10 * time.Second)
-	}
 }
 
 func (w *Worker) toJob(job *Job) {

@@ -3,7 +3,6 @@ package gather
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -38,7 +37,11 @@ func parseConfig(configPath string) {
 
 		if _, found := workers[ipAddr]; !found {
 			workers[ipAddr] = &Worker{
-				addr: ipAddr,
+				addr:    ipAddr,
+				srcDir:  srcDir,
+				dstDir:  dstDir,
+				pattern: pattern,
+				jobs:    make(map[string]*Job),
 			}
 		}
 		wk := workers[ipAddr]
@@ -49,29 +52,10 @@ func parseConfig(configPath string) {
 		}
 
 		for _, subDir := range subDirs {
+			srcSubDir := path.Join(srcDir, subDir)
 			dstSubDir := path.Join(dstDir, subDir)
-			wk.jobs = append(wk.jobs, &Job{
-				src:     path.Join(srcDir, subDir),
-				pattern: pattern,
-				dist:    dstSubDir,
-			})
 
-			if fi, err := os.Stat(dstSubDir); err != nil {
-				if os.IsNotExist(err) {
-					if err := os.MkdirAll(dstSubDir, os.ModePerm); err != nil {
-						panic(err)
-					}
-					if err := os.MkdirAll(path.Join(dstSubDir, "archive"), os.ModePerm); err != nil {
-						panic(err)
-					}
-				} else {
-					panic(err)
-				}
-			} else if !fi.IsDir() {
-				panic(fmt.Sprintf("%s is not dir", dstSubDir))
-			}
-
-			ipSyncMap[dstSubDir] = ipAddr
+			wk.createJob(srcSubDir, dstSubDir)
 		}
 
 	}
