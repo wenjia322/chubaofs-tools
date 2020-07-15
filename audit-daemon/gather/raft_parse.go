@@ -335,12 +335,13 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (rea
 		addRaftItemMap(raftItemMap, recordType, dataSize, opType, term, index, crc)
 		raftItemMap["NodeIP"] = ip
 		raftItemMap["insert_time"] = time.Now().UnixNano() / 1e6
+		convertUint64ToStr(raftItemMap)
 		if valBytes, err = json.Marshal(raftItemMap); err != nil {
 			LOG.Errorf("cmd single map value json marshal error: [%v], map[%v]", err, raftItemMap)
 			return
 		}
 		if err = sendRaftItem(inode, uint64(startOffset)+fileOffset, valBytes); err != nil {
-			LOG.Errorf("send raft item to database err: [%v], inode[%v], offset[%v], body[%v]", err, inode, uint64(startOffset)+fileOffset, valBytes)
+			LOG.Errorf("send raft item to database err: [%v], inode[%v], offset[%v], body[%v], raftItemMap[%v]", err, inode, uint64(startOffset)+fileOffset, valBytes, raftItemMap)
 			return
 		}
 
@@ -374,7 +375,7 @@ func parseMetaOp(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) 
 		raftItemMap = make(map[string]interface{})
 		raftItemMap["cursor"] = cursor
 	case opFSMInternalDeleteInode:
-		var inodeIDs []uint64
+		var inodeIDs []string
 		if inodeIDs, err = raft.InternalDeleteInode(cmd.V); err != nil {
 			LOG.Errorf("parse raft item: inode batch unmarshal err[%v], cmd[%v]", err, cmd)
 			return
@@ -494,8 +495,21 @@ func addRaftItemMap(raftItemMap map[string]interface{}, recordType byte, dataSiz
 	raftItemMap["dataSize_1"] = dataSize
 	raftItemMap["opType_1"] = opType
 	raftItemMap["term_1"] = term
-	raftItemMap["index_1"] = index
+	raftItemMap["index_1"] = strconv.FormatUint(index, 10)
 	raftItemMap["crc_1"] = crc
+}
+
+func convertUint64ToStr(raftItemMap map[string]interface{}) {
+	convertFun := func(key string) {
+		if value, exist := raftItemMap[key]; exist {
+			raftItemMap[key] = strconv.FormatUint(value.(uint64), 10)
+		}
+	}
+	convertFun("PartitionID")
+	convertFun("Inode")
+	convertFun("Start")
+	convertFun("End")
+	convertFun("ParentId")
 }
 
 func findFileByInode(dir string, inode uint64) (filePath string, err error) {

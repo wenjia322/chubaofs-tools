@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"strconv"
 )
 
 type InodeBatch []*Inode
@@ -37,13 +38,13 @@ func InodeBatchUnmarshal(raw []byte) (InodeBatch, error) {
 	return result, nil
 }
 
-func InternalDeleteInode(val []byte) (inodeIDs []uint64, err error) {
+func InternalDeleteInode(val []byte) (inodeIDs []string, err error) {
 	if len(val) == 0 {
 		return
 	}
 	buf := bytes.NewBuffer(val)
 	ino := NewInode(0, 0)
-	inodeIDs = make([]uint64, 0)
+	inodeIDs = make([]string, 0)
 	for {
 		err = binary.Read(buf, binary.BigEndian, &ino.Inode)
 		if err != nil {
@@ -53,6 +54,6 @@ func InternalDeleteInode(val []byte) (inodeIDs []uint64, err error) {
 			}
 			return
 		}
-		inodeIDs = append(inodeIDs, ino.Inode)
+		inodeIDs = append(inodeIDs, strconv.FormatUint(ino.Inode, 10))
 	}
 }
