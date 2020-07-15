@@ -502,7 +502,7 @@ func addRaftItemMap(raftItemMap map[string]interface{}, recordType byte, dataSiz
 func convertUint64ToStr(raftItemMap map[string]interface{}) {
 	convertFun := func(key string) {
 		if value, exist := raftItemMap[key]; exist {
-			raftItemMap[key] = strconv.FormatUint(value.(uint64), 10)
+			raftItemMap[key] = strconv.FormatFloat(value.(float64), 'f', -1, 64)
 		}
 	}
 	convertFun("PartitionID")
