@@ -235,7 +235,7 @@ func parseLogItem(logItem *LogItem) (err error) {
 	if startOffset, exist = offsetMeta[logItem.Inode]; !exist {
 		startOffset = 0
 	}
-	if endOffset, err = readRaftFile(file, logItem.Inode, startOffset, ipSyncMap[logItem.Dir]); err != nil {
+	if endOffset, err = readRaftFile(file, logItem.Inode, startOffset, getNodeIP(logItem.Dir)); err != nil {
 		LOG.Errorf("read raft file: file [%v] offset [%v] err [%v]", path.Join(fileDir, file.Name()), startOffset, err)
 		return err
 	}

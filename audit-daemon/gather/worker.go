@@ -3,12 +3,18 @@ package gather
 import (
 	"os"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/util"
 )
 
-var ipSyncMap map[string]string // key: The path to store the synchronization file, value: ip of machine which did the file come from
+var ipSyncMap sync.Map // key: The path to store the synchronization file, value: ip of machine which did the file come from
+
+func getNodeIP(dir string) string {
+	addr, _ := ipSyncMap.Load(dir)
+	return addr.(string)
+}
 
 var workers = make(map[string]*Worker)
 
@@ -89,5 +95,5 @@ func (w *Worker) createJob(srcSubDir, dstSubDir string) {
 		pattern: w.pattern,
 		dist:    dstSubDir,
 	}
-	ipSyncMap[dstSubDir] = w.addr
+	ipSyncMap.Store(dstSubDir, w.addr)
 }

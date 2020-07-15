@@ -11,7 +11,6 @@ import (
 const exclusionDir = "logs"
 
 func parseConfig(configPath string) {
-	ipSyncMap = make(map[string]string)
 	all, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		panic(fmt.Sprintf("read %s has err:[%s]", configPath, err.Error()))
