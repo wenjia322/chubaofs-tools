@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"reflect"
 	"sort"
 	"strconv"
 	"syscall"
@@ -502,7 +503,16 @@ func addRaftItemMap(raftItemMap map[string]interface{}, recordType byte, dataSiz
 func convertUint64ToStr(raftItemMap map[string]interface{}) {
 	convertFun := func(key string) {
 		if value, exist := raftItemMap[key]; exist {
-			raftItemMap[key] = strconv.FormatFloat(value.(float64), 'f', -1, 64)
+			switch value.(type) {
+			case uint64:
+				raftItemMap[key] = strconv.FormatUint(value.(uint64), 10)
+			case float64:
+				raftItemMap[key] = strconv.FormatFloat(value.(float64), 'f', -1, 64)
+			default:
+				LOG.Warningf("unsupported type convert: %v", reflect.TypeOf(value))
+				valueBytes, _ := json.Marshal(value)
+				raftItemMap[key] = string(valueBytes)
+			}
 		}
 	}
 	convertFun("PartitionID")
