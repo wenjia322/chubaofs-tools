@@ -9,6 +9,12 @@
 			"revisionTime": "2020-06-09T07:07:44Z"
 		},
 		{
+			"checksumSHA1": "qRnozfX2f2XkIThJMfi9M0f5lIY=",
+			"path": "github.com/chubaofs/chubaofs/sdk/master",
+			"revision": "d0cbca7b1a3d726ec44bb2e41ad5d0acdf9e5683",
+			"revisionTime": "2020-07-21T07:45:48Z"
+		},
+		{
 			"checksumSHA1": "NjFiah/tF2ipkDI5OFwbUx3jhA4=",
 			"path": "github.com/chubaofs/chubaofs/util",
 			"revision": "8f0501daf878aca5308e942005cd85d554c17a4e",
@@ -88,11 +94,25 @@
 			"revisionTime": "2019-05-31T09:26:28Z"
 		},
 		{
+			"checksumSHA1": "BkNFlwI13F4tpx/4gqTAgZdI0C8=",
+			"origin": "github.com/chubaofs/chubaofs/vendor/golang.org/x/net/context",
+			"path": "golang.org/x/net/context",
+			"revision": "d0cbca7b1a3d726ec44bb2e41ad5d0acdf9e5683",
+			"revisionTime": "2020-07-21T07:45:48Z"
+		},
+		{
+			"checksumSHA1": "yC+fpQyU+xwZgHBJ/JE9nqvm+uI=",
+			"origin": "github.com/chubaofs/chubaofs/vendor/golang.org/x/time/rate",
+			"path": "golang.org/x/time/rate",
+			"revision": "d0cbca7b1a3d726ec44bb2e41ad5d0acdf9e5683",
+			"revisionTime": "2020-07-21T07:45:48Z"
+		},
+		{
 			"checksumSHA1": "TM3Neoy1xRAKyZYMGzKc41sDFW4=",
 			"path": "gopkg.in/natefinch/lumberjack.v2",
 			"revision": "a96e63847dc3c67d17befa69c303767e2f84e54f",
 			"revisionTime": "2017-05-31T16:03:50Z"
 		}
 	],
-	"rootPath": "fsync"
+	"rootPath": "github.com/chubaofs/chubaofs-tools/audit-daemon"
 }
