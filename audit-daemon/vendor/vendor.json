@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "/WZk9fYS7Cttcq1vJQxz8VHV+2o=",
+			"checksumSHA1": "YlnimOidxDwDVOvNmhvieGpWKiQ=",
 			"path": "github.com/chubaofs/chubaofs/proto",
-			"revision": "8f0501daf878aca5308e942005cd85d554c17a4e",
-			"revisionTime": "2020-06-09T07:07:44Z"
+			"revision": "ef5833108417f51cae557beb146c0f4877525550",
+			"revisionTime": "2020-07-24T03:01:11Z"
 		},
 		{
 			"checksumSHA1": "qRnozfX2f2XkIThJMfi9M0f5lIY=",
