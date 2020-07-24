@@ -325,7 +325,7 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip, partitionID
 					LOG.Errorf("unmarshal fail: err[%v]", err)
 					return
 				}
-				if raftItemMap, err = parseMetaOp(cmd, dbConfig); err != nil {
+				if raftItemMap, err = parseMetaOp(cmd, dbConfig, partitionID); err != nil {
 					LOG.Errorf("parse meta operation err: cmd[%v], err[%v]", cmd, err)
 					return
 				}
@@ -362,7 +362,7 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip, partitionID
 	return int64(fileOffset), nil
 }
 
-func parseMetaOp(cmd *OpKvData, dbConfig *sdk.DBConfig) (raftItemMap map[string]interface{}, err error) {
+func parseMetaOp(cmd *OpKvData, dbConfig *sdk.DBConfig, pid string) (raftItemMap map[string]interface{}, err error) {
 	switch cmd.Op {
 	case opFSMCreateInode, opFSMExtentsAdd, opFSMExtentTruncate, opFSMCreateLinkInode, opFSMEvictInode, opFSMUnlinkInode:
 		if raftItemMap, err = parseInode(cmd); err != nil {
@@ -370,13 +370,9 @@ func parseMetaOp(cmd *OpKvData, dbConfig *sdk.DBConfig) (raftItemMap map[string]
 			return
 		}
 	case opFSMCreateDentry, opFSMDeleteDentry, opFSMDeleteDentryBatch, opFSMUpdateDentry:
-		if raftItemMap, err = parseDentry(cmd); err != nil {
+		if raftItemMap, err = parseDentry(cmd, dbConfig, pid); err != nil {
 			LOG.Errorf("parse raft item: parse dentry fail: err[%v]", err)
 			return
-		}
-		if cmd.Op == opFSMCreateDentry || cmd.Op == opFSMUpdateDentry {
-			InsertDentryInfo(raftItemMap[sdk.Raft_ParentId].(string), raftItemMap[sdk.Raft_InodeId].(string), raftItemMap[sdk.Raft_InodeName].(string),
-				raftItemMap[sdk.Raft_Pid].(string), raftItemMap[sdk.Raft_VolumeName].(string), dbConfig)
 		}
 	case opFSMInternalDeleteInodeBatch, opFSMEvictInodeBatch, opFSMUnlinkInodeBatch:
 		if raftItemMap, err = parseInodeBatch(cmd); err != nil {

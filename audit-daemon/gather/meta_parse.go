@@ -2,6 +2,9 @@ package gather
 
 import (
 	"encoding/json"
+	"strconv"
+
+	"github.com/chubaofs/chubaofs-tools/audit-daemon/sdk"
 	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/util/raft"
 )
@@ -59,7 +62,7 @@ func parseInodeBatch(cmd *OpKvData) (raftItemMap map[string]interface{}, err err
 	return
 }
 
-func parseDentry(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) {
+func parseDentry(cmd *OpKvData, dbConfig *sdk.DBConfig, pid string) (raftItemMap map[string]interface{}, err error) {
 	den := &raft.Dentry{}
 	if err = den.Unmarshal(cmd.V); err != nil {
 		LOG.Errorf("parse raft item: dentry unmarshal err[%v], cmd[%v]", err, cmd)
@@ -76,5 +79,9 @@ func parseDentry(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) 
 		return
 	}
 	raftItemMap = DrawMap(values, ".")
+
+	if cmd.Op == opFSMCreateDentry || cmd.Op == opFSMUpdateDentry {
+		InsertDentryInfo(strconv.FormatUint(den.ParentId, 10), strconv.FormatUint(den.Inode, 10), den.Name, pid, volInfo[pid], dbConfig)
+	}
 	return
 }
