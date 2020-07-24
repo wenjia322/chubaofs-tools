@@ -139,16 +139,19 @@ func (dbc *DBConfig) QuerySortTop(table string, queryMap map[string]interface{},
 
 	respData, err := SendRequest("GET", url, nil)
 	if err != nil {
+		LOG.Errorf("query chubaodb err: url[%v], err[%v]", url, err)
 		return nil, err
 	}
 
 	var cdbResp ResponseCDB
 	if err := json.Unmarshal(respData, &cdbResp); err != nil {
+		LOG.Errorf("query chubaodb err: url[%v], err[%v]", url, err)
 		return nil, err
 	}
 
 	if cdbResp.Info.Success != 1 {
 		err = errors.New(cdbResp.Info.Message)
+		LOG.Errorf("query chubaodb err: url[%v], err[%v]", url, err)
 		return nil, err
 	}
 

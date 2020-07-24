@@ -39,7 +39,7 @@ func InsertDentryInfo(parentID, inode, name, partitionID, vol string, dbConfig *
 		return
 	}
 	if path, err = FindDentryPath(parentID, name, vol, dbConfig); err != nil {
-		LOG.Errorf("find dentry path err: vol[%v], parentID[%v], name[%v]", vol, parentID, name)
+		LOG.Errorf("find dentry path err: vol[%v], parentID[%v], name[%v], err[%v]", vol, parentID, name, err)
 		return
 	}
 	dInfo := &dentryInfo{
@@ -57,7 +57,7 @@ func InsertDentryInfo(parentID, inode, name, partitionID, vol string, dbConfig *
 	}
 	index := getUUid()
 	if err = dbConfig.Insert(dbConfig.DentryTable, index, body); err != nil {
-		LOG.Errorf("insert chubaodb err: table[%v], index[%v], body[%v]", dbConfig.DentryTable, index, dInfo)
+		LOG.Errorf("insert chubaodb err: table[%v], index[%v], body[%v], err[%v]", dbConfig.DentryTable, index, dInfo, err)
 		return
 	}
 	return
@@ -93,7 +93,7 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 
 		var obj interface{}
 		if obj, err = dbc.QuerySortTop(dbc.DentryTable, queryDentryMap, sdk.D_InsertTime, sdk.DESC); err != nil {
-			LOG.Errorf("query chubaodb err: table[%v] queryMap[%v]", dbc.DentryTable, queryDentryMap)
+			LOG.Errorf("query chubaodb err: table[%v] queryMap[%v], err[%v]", dbc.DentryTable, queryDentryMap, err)
 			return "", err
 		}
 		if obj != nil {
@@ -107,7 +107,7 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 		queryRaftMap[sdk.Raft_VolumeName] = vol
 		queryRaftMap[sdk.Raft_InodeId] = parentID
 		if obj, err = dbc.QuerySortTop(dbc.RaftTable, queryRaftMap, sdk.Raft_InsertTime, sdk.DESC); err != nil {
-			LOG.Errorf("query chubaodb err: table[%v], queryMap[%v]", dbc.RaftTable, queryRaftMap)
+			LOG.Errorf("query chubaodb err: table[%v], queryMap[%v], err[%v]", dbc.RaftTable, queryRaftMap, err)
 			return "", err
 		}
 		if obj != nil {

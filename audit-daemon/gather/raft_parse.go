@@ -5,9 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/chubaofs/chubaofs-tools/audit-daemon/sdk"
-	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
-	"github.com/chubaofs/chubaofs-tools/audit-daemon/util/raft"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,6 +15,10 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/chubaofs/chubaofs-tools/audit-daemon/sdk"
+	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
+	"github.com/chubaofs/chubaofs-tools/audit-daemon/util/raft"
 )
 
 const (
