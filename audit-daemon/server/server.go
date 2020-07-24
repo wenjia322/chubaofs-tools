@@ -42,7 +42,7 @@ func forwardCmdReq(w http.ResponseWriter, r *http.Request) {
 	wg.Add(len(req.AddrList))
 	for i, addr := range req.AddrList {
 		go func(i int, addr string) {
-			respData, err := SendDaemonReq("POST", addr+PathCommand, &cmdReq)
+			respData, err := SendByteReq("POST", addr+PathCommand, &cmdReq)
 			if err != nil {
 				LOG.Errorf("forward cmd req err: addr[%v], req[%v]", addr, cmdReq)
 				results[i] = "execute failed!"

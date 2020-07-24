@@ -16,9 +16,10 @@ var (
 	logDir   = flag.String("log_dir", "./log/", "log directory")
 
 	//gather need config
-	config  = flag.String("gather_conf", "", "gather module config path")
-	dbAddr  = flag.String("db_addr", "", "chubaodb address to send")
-	dbTable = flag.String("db_table", "", "chubaodb table to send")
+	config    = flag.String("gather_conf", "", "gather module config path")
+	dbAddr    = flag.String("db_addr", "", "chubaodb address to send")
+	dbTable   = flag.String("db_table", "", "chubaodb table to send")
+	cfsMaster = flag.String("master", "", "address of ChubaoFS master")
 )
 
 func main() {
@@ -34,8 +35,11 @@ func main() {
 		if *dbAddr == "" || *dbTable == "" {
 			panic("must set '-db_addr' and '-db_table' in gather module")
 		}
+		if *cfsMaster == "" {
+			panic("must set '-master' in gather module")
+		}
 
-		gather.StartGather(*config)
+		gather.StartGather(*config, *cfsMaster)
 		util.LOG.Fatal(gather.StartRaftParse(*logDir+"synclog", *dbAddr, *dbTable))
 	case "daemon":
 		daemon.StartServer(*port)

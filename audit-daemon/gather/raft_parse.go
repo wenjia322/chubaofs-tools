@@ -2,20 +2,20 @@ package gather
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/chubaofs/chubaofs-tools/audit-daemon/sdk"
 	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/util/raft"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -67,7 +67,9 @@ type OpKvData struct {
 	V  []byte `json:"v"`
 }
 
-var chubaodbAddr string
+var cdbAddr string
+var raftTable string
+var dentryTable = "dentrytest"
 var offsetMeta map[uint64]int64 // record offset of log file and raft file: inode -> offset (has read)
 
 func StartRaftParse(logDir string, dbAddr, dbTable string) (err error) {
@@ -78,7 +80,9 @@ func StartRaftParse(logDir string, dbAddr, dbTable string) (err error) {
 		}
 	}
 
-	chubaodbAddr = fmt.Sprintf("%v/put/%v", dbAddr, dbTable)
+	cdbAddr = dbAddr
+	raftTable = dbTable
+
 	var logFileInfos []*FileInfo
 	// continue execution if report error
 	for {
@@ -236,7 +240,7 @@ func parseLogItem(logItem *LogItem) (err error) {
 	if startOffset, exist = offsetMeta[logItem.Inode]; !exist {
 		startOffset = 0
 	}
-	if endOffset, err = readRaftFile(file, logItem.Inode, startOffset, getNodeIP(logItem.Dir)); err != nil {
+	if endOffset, err = readRaftFile(file, logItem.Inode, startOffset, getNodeIP(logItem.Dir), getPartitionID(logItem.Dir)); err != nil {
 		LOG.Errorf("read raft file: file [%v] offset [%v] err [%v]", path.Join(fileDir, file.Name()), startOffset, err)
 		return err
 	}
@@ -247,7 +251,12 @@ func parseLogItem(logItem *LogItem) (err error) {
 	return
 }
 
-func readRaftFile(file *os.File, inode uint64, startOffset int64, ip string) (endOffset int64, err error) {
+func getPartitionID(dir string) string {
+	begin := strings.LastIndex(dir, "/")
+	return dir[begin+1:]
+}
+
+func readRaftFile(file *os.File, inode uint64, startOffset int64, ip, partitionID string) (endOffset int64, err error) {
 	LOG.Debugf("start reading raft log file: [%v]", file.Name())
 	var readLen int
 	var readOffset int64
@@ -262,7 +271,7 @@ func readRaftFile(file *os.File, inode uint64, startOffset int64, ip string) (en
 			LOG.Errorf("parse raft files: read err[%s], file[%s]", err.Error(), file.Name())
 			return
 		}
-		if readOffset, err = parseRaftItem(readBytes[:readLen], inode, endOffset, ip); err != nil {
+		if readOffset, err = parseRaftItem(readBytes[:readLen], inode, endOffset, ip, partitionID); err != nil {
 			LOG.Errorf("parse raft files: parse err[%s], file[%s]", err.Error(), file.Name())
 			return
 		}
@@ -274,7 +283,7 @@ func readRaftFile(file *os.File, inode uint64, startOffset int64, ip string) (en
 	return endOffset, nil
 }
 
-func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (readOffset int64, err error) {
+func parseRaftItem(data []byte, inode uint64, startOffset int64, ip, partitionID string) (readOffset int64, err error) {
 	LOG.Debug("Read raft wal record: data len [%v]", len(data))
 	var (
 		fileOffset uint64
@@ -283,6 +292,7 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (rea
 		//randWrite  *rndWrtItem
 	)
 
+	dbConfig := sdk.NewDBConfig(cdbAddr, raftTable, dentryTable)
 	fileOffset = 0
 
 	for {
@@ -315,7 +325,7 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (rea
 					LOG.Errorf("unmarshal fail: err[%v]", err)
 					return
 				}
-				if raftItemMap, err = parseMetaOp(cmd); err != nil {
+				if raftItemMap, err = parseMetaOp(cmd, dbConfig); err != nil {
 					LOG.Errorf("parse meta operation err: cmd[%v], err[%v]", cmd, err)
 					return
 				}
@@ -333,15 +343,14 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (rea
 		}
 		crcOffset := 1 + 8 + dataSize
 		crc := binary.BigEndian.Uint32(dataTemp[crcOffset : crcOffset+4])
-		addRaftItemMap(raftItemMap, recordType, dataSize, opType, term, index, crc)
-		raftItemMap["NodeIP"] = ip
-		raftItemMap["insert_time"] = time.Now().UnixNano() / 1e6
+		addRaftItemMap(raftItemMap, recordType, dataSize, opType, term, index, crc, partitionID, ip)
 		convertUint64ToStr(raftItemMap)
 		if valBytes, err = json.Marshal(raftItemMap); err != nil {
 			LOG.Errorf("cmd single map value json marshal error: [%v], map[%v]", err, raftItemMap)
 			return
 		}
-		if err = sendRaftItem(inode, uint64(startOffset)+fileOffset, valBytes); err != nil {
+		itemIndex := fmt.Sprintf("%v_%v", strconv.FormatUint(inode, 10), strconv.FormatUint(uint64(startOffset)+fileOffset, 10))
+		if err = dbConfig.Insert(dbConfig.RaftTable, itemIndex, valBytes); err != nil {
 			LOG.Errorf("send raft item to database err: [%v], inode[%v], offset[%v], body[%v], raftItemMap[%v]", err, inode, uint64(startOffset)+fileOffset, valBytes, raftItemMap)
 			return
 		}
@@ -353,7 +362,7 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip string) (rea
 	return int64(fileOffset), nil
 }
 
-func parseMetaOp(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) {
+func parseMetaOp(cmd *OpKvData, dbConfig *sdk.DBConfig) (raftItemMap map[string]interface{}, err error) {
 	switch cmd.Op {
 	case opFSMCreateInode, opFSMExtentsAdd, opFSMExtentTruncate, opFSMCreateLinkInode, opFSMEvictInode, opFSMUnlinkInode:
 		if raftItemMap, err = parseInode(cmd); err != nil {
@@ -364,6 +373,10 @@ func parseMetaOp(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) 
 		if raftItemMap, err = parseDentry(cmd); err != nil {
 			LOG.Errorf("parse raft item: parse dentry fail: err[%v]", err)
 			return
+		}
+		if cmd.Op == opFSMCreateDentry || cmd.Op == opFSMUpdateDentry {
+			InsertDentryInfo(raftItemMap[sdk.Raft_ParentId].(string), raftItemMap[sdk.Raft_InodeId].(string), raftItemMap[sdk.Raft_InodeName].(string),
+				raftItemMap[sdk.Raft_Pid].(string), raftItemMap[sdk.Raft_VolumeName].(string), dbConfig)
 		}
 	case opFSMInternalDeleteInodeBatch, opFSMEvictInodeBatch, opFSMUnlinkInodeBatch:
 		if raftItemMap, err = parseInodeBatch(cmd); err != nil {
@@ -401,7 +414,7 @@ func parseMetaOp(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) 
 			return
 		}
 		raftItemMap = make(map[string]interface{})
-		raftItemMap["Inode"] = extend.Inode
+		raftItemMap[sdk.Raft_InodeId] = extend.Inode
 		for k, v := range extend.DataMap {
 			raftItemMap["dataMap."+k] = string(v)
 		}
@@ -443,61 +456,22 @@ func parseMetaOp(cmd *OpKvData) (raftItemMap map[string]interface{}, err error) 
 		raftItemMap["data"] = cmd.V
 	}
 	//dataString := fmt.Sprintf("opt:%v, k:%v, v:%v", cmd.Op, cmd.K, string(bytes))
-	raftItemMap["op_2"] = cmd.Op
-	raftItemMap["key_2"] = cmd.K
+	raftItemMap[sdk.Raft_OpType] = cmd.Op
+	raftItemMap[sdk.Raft_OpKey] = cmd.K
 	return
 }
 
-func sendRaftItem(inodeID uint64, offset uint64, body []byte) (err error) {
-	url := fmt.Sprintf("http://%v/%v_%v", chubaodbAddr, strconv.FormatUint(inodeID, 10), strconv.FormatUint(offset, 10))
-	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
-	if err != nil {
-		LOG.Errorf("send raft item request[%s]: new request err: [%s]", url, err.Error())
-		return
-	}
-
-	do, err := http.DefaultClient.Do(req)
-	if err != nil {
-		LOG.Errorf("send raft item request[%s]: do client err: [%s]", url, err.Error())
-		return
-	}
-
-	if do.StatusCode != 200 {
-		resBody := do.Body
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resBody)
-		LOG.Warningf("send request[%s]: status code: [%v]", url, do.StatusCode)
-		return fmt.Errorf("post has status:[%d] body:[%s]", do.StatusCode, buf.String())
-	}
-
-	all, err := ioutil.ReadAll(do.Body)
-	_ = do.Body.Close()
-	if err != nil {
-		LOG.Errorf("send raft item request[%s]: read body err: [%s]", url, err.Error())
-		return err
-	}
-
-	var resp Response
-	if err = json.Unmarshal(all, &resp); err != nil {
-		LOG.Errorf("send raft item request[%s]: unmarshal err: [%s]", url, err.Error())
-		return err
-	}
-
-	if resp.Code > 200 {
-		LOG.Warningf("send raft item request[%s]: response code: [%v]", url, resp.Code)
-		return fmt.Errorf(resp.Msg)
-	}
-
-	return nil
-}
-
-func addRaftItemMap(raftItemMap map[string]interface{}, recordType byte, dataSize uint64, opType byte, term uint64, index uint64, crc uint32) {
-	raftItemMap["recType_1"] = recordType
-	raftItemMap["dataSize_1"] = dataSize
-	raftItemMap["opType_1"] = opType
-	raftItemMap["term_1"] = term
-	raftItemMap["index_1"] = strconv.FormatUint(index, 10)
-	raftItemMap["crc_1"] = crc
+func addRaftItemMap(raftItemMap map[string]interface{}, recordType byte, dataSize uint64, opType byte, term uint64, index uint64, crc uint32, partitionID, ip string) {
+	//raftItemMap["_recType"] = recordType
+	//raftItemMap["_dataSize"] = dataSize
+	//raftItemMap["_opType"] = opType
+	raftItemMap[sdk.Raft_Term] = term
+	raftItemMap[sdk.Raft_Index] = strconv.FormatUint(index, 10)
+	//raftItemMap["_crc"] = crc
+	raftItemMap[sdk.Raft_Pid] = partitionID
+	raftItemMap[sdk.Raft_NodeIP] = ip
+	raftItemMap[sdk.Raft_InsertTime] = time.Now().UnixNano() / 1e6
+	raftItemMap[sdk.Raft_VolumeName] = volInfo[partitionID]
 }
 
 func convertUint64ToStr(raftItemMap map[string]interface{}) {

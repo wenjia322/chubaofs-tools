@@ -31,8 +31,8 @@ func newErr(name string, e error) *MyError {
 }
 
 //this function will run background not block
-func StartGather(configPath string) {
-	parseConfig(configPath)
+func StartGather(configPath, master string) {
+	parseConfig(configPath, master)
 	for _, w := range workers {
 		go func(w *Worker) {
 			toWork(w)
@@ -115,7 +115,7 @@ func (j *Job) appendFile(w *Worker, meta map[uint64]uint64, local, remote *FileI
 
 		var start = local.Size
 		for {
-			respData, err := SendDaemonReq("POST", w.addr+PathReadFile, &RequestGetContent{
+			respData, err := SendByteReq("POST", w.addr+PathReadFile, &RequestGetContent{
 				Dir:     j.src,
 				Name:    remote.Name,
 				Pattern: j.pattern,
@@ -180,7 +180,7 @@ func (j *Job) createFile(w *Worker, meta map[uint64]uint64, remote *FileInfo) er
 
 	var start int64
 	for {
-		respData, err := SendDaemonReq("POST", w.addr+PathReadFile, &RequestGetContent{
+		respData, err := SendByteReq("POST", w.addr+PathReadFile, &RequestGetContent{
 			Dir:     j.src,
 			Name:    remote.Name,
 			Pattern: j.pattern,
@@ -318,7 +318,7 @@ func (w *Worker) remoteFiles(dir, pattern string) ([]*FileInfo, error) {
 		Pattern: pattern,
 	}
 
-	respData, err := SendDaemonReq("POST", w.addr+PathListFile, &req)
+	respData, err := SendByteReq("POST", w.addr+PathListFile, &req)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +328,7 @@ func (w *Worker) remoteFiles(dir, pattern string) ([]*FileInfo, error) {
 	}
 
 	sort.Slice(list, func(i, j int) bool {
-		if list[i].Inode < list[j].Inode {
+		if list[i].Time.Unix() < list[j].Time.Unix() {
 			return true
 		}
 		return false
@@ -365,7 +365,7 @@ func remoteDirs(addr, dir, exclusion string) ([]string, error) {
 		Exclusion: exclusion,
 	}
 
-	respData, err := SendDaemonReq("POST", addr+PathListDir, &req)
+	respData, err := SendByteReq("POST", addr+PathListDir, &req)
 	if err != nil {
 		return nil, err
 	}

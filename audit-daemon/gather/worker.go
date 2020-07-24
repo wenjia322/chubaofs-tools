@@ -3,10 +3,12 @@ package gather
 import (
 	"os"
 	"path"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/util"
+	"github.com/chubaofs/chubaofs/sdk/master"
 )
 
 var ipSyncMap sync.Map // key: The path to store the synchronization file, value: ip of machine which did the file come from
@@ -17,6 +19,7 @@ func getNodeIP(dir string) string {
 }
 
 var workers = make(map[string]*Worker)
+var volInfo = make(map[string]string) // key: MetaPartition ID, value: VolName
 
 type Worker struct {
 	addr    string
@@ -24,6 +27,7 @@ type Worker struct {
 	dstDir  string
 	pattern string
 	jobs    map[string]*Job
+	mc      *master.MasterClient
 }
 
 type Job struct {
@@ -65,11 +69,11 @@ func (w *Worker) updateJobs() {
 		if _, exist := w.jobs[srcSubDir]; exist {
 			continue
 		}
-		w.createJob(srcSubDir, dstSubDir)
+		w.createJob(srcSubDir, dstSubDir, subDir)
 	}
 }
 
-func (w *Worker) createJob(srcSubDir, dstSubDir string) {
+func (w *Worker) createJob(srcSubDir, dstSubDir, pid string) {
 	util.LOG.Debugf("create new job: addr[%v], src[%v], dst[%v], pattern[%v]", w.addr, srcSubDir, dstSubDir, w.pattern)
 	if fi, err := os.Stat(dstSubDir); err != nil {
 		if os.IsNotExist(err) {
@@ -96,4 +100,19 @@ func (w *Worker) createJob(srcSubDir, dstSubDir string) {
 		dist:    dstSubDir,
 	}
 	ipSyncMap.Store(dstSubDir, w.addr)
+
+	w.getVolByPid(pid)
+}
+
+func (w *Worker) getVolByPid(pid string) {
+	if _, exist := volInfo[pid]; !exist {
+		partitionID, _ := strconv.ParseUint(pid, 10, 64)
+		p, err := w.mc.ClientAPI().GetMetaPartition(partitionID)
+		if err != nil {
+			util.LOG.Errorf("get meta partition err: partitionID[%v], err[%v]", pid, err)
+			volInfo[pid] = ""
+			return
+		}
+		volInfo[pid] = p.VolName
+	}
 }

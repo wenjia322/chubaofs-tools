@@ -6,15 +6,21 @@ import (
 	"path"
 	"regexp"
 	"strings"
+
+	"github.com/chubaofs/chubaofs/sdk/master"
 )
 
 const exclusionDir = "logs"
 
-func parseConfig(configPath string) {
+func parseConfig(configPath, masterAddr string) {
 	all, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		panic(fmt.Sprintf("read %s has err:[%s]", configPath, err.Error()))
 	}
+
+	var masters []string
+	masters = append(masters, masterAddr)
+	mc := master.NewMasterClient(masters, false)
 
 	reg := regexp.MustCompile(`\s+`)
 	for _, line := range strings.Split(string(all), "\n") {
@@ -41,6 +47,7 @@ func parseConfig(configPath string) {
 				dstDir:  dstDir,
 				pattern: pattern,
 				jobs:    make(map[string]*Job),
+				mc:      mc,
 			}
 		}
 		wk := workers[ipAddr]
@@ -54,8 +61,7 @@ func parseConfig(configPath string) {
 			srcSubDir := path.Join(srcDir, subDir)
 			dstSubDir := path.Join(dstDir, subDir)
 
-			wk.createJob(srcSubDir, dstSubDir)
+			wk.createJob(srcSubDir, dstSubDir, subDir)
 		}
-
 	}
 }

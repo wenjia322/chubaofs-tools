@@ -65,18 +65,46 @@ type ResponseSearch struct {
 	Code  int32
 	Msg   string
 	Total int32
-	Hits  []interface{}
+	Hits  []*HitItem
 }
 
 type ResponseCDB struct {
 	Code  int32
 	Total int32
-	Hits  []interface{}
-	Info  CDBInfo
+	Hits  []*HitItem
+	Info  *CDBInfo
 }
 
 type CDBInfo struct {
 	Success int32
 	Error   int32
 	Message string
+}
+
+type HitItem struct {
+	Score float64
+	Doc   *HitInfo
+}
+
+type HitInfo struct {
+	Id      string      `json:"_id"`
+	SortKey string      `json:"_sort_key"`
+	Version int         `json:"_version"`
+	Source  interface{} `json:"_source"`
+}
+
+type RaftItem struct {
+	Op          int8   `json:"_op"`
+	Key         string `json:"_key"`
+	PartitionId string `json:"_partition_id"`
+	VolName     string `json:"_volume"`
+	NodeIP      string `json:"_node_ip"`
+	//Crc			int64	`json:"_crc"`
+	//DataSize	int		`json:"_dataSize"`
+	Index string `json:"_index"`
+	//OpType		int		`json:"_opType"`
+	//RecType		int		`json:"_recType"`
+	Term       int   `json:"_term"`
+	InsertTime int64 `json:"_insert_time"`
+	Data       interface{}
 }

@@ -51,7 +51,7 @@ func WriteMeta(metaPath string, meta interface{}) {
 	}
 }
 
-func SendDaemonReq(method, url string, request interface{}) ([]byte, error) {
+func SendByteReq(method, url string, request interface{}) ([]byte, error) {
 	body, err := SendRequest(method, url, request)
 	if err != nil {
 		LOG.Errorf("send request[%s]: err: [%s]", url, err.Error())
