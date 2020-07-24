@@ -91,14 +91,19 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 		queryDentryMap[sdk.D_Vol] = vol
 		queryDentryMap[sdk.D_Inode] = parentID
 
-		var obj interface{}
-		if obj, err = dbc.QuerySortTop(dbc.DentryTable, queryDentryMap, sdk.D_InsertTime, sdk.DESC); err != nil {
+		var data []byte
+		if data, err = dbc.QuerySortTop(dbc.DentryTable, queryDentryMap, sdk.D_InsertTime, sdk.DESC); err != nil {
 			LOG.Errorf("query chubaodb err: table[%v] queryMap[%v], err[%v]", dbc.DentryTable, queryDentryMap, err)
-			return "", err
-		}
-		if obj != nil {
-			dentryPath = path.Join(obj.(dentryInfo).Path, dentryPath)
 			return
+		}
+		if data != nil {
+			var dInfo *dentryInfo
+			if err = json.Unmarshal(data, dInfo); err != nil {
+				LOG.Errorf("unmarshal chubaodb data err: data[%v], err[%v]", string(data), err)
+			} else {
+				dentryPath = path.Join(dInfo.Path, dentryPath)
+				return
+			}
 		}
 
 		// 2. if not found, search in raft table
@@ -106,14 +111,20 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 		queryRaftMap[sdk.Raft_OpType] = opFSMCreateDentry
 		queryRaftMap[sdk.Raft_VolumeName] = vol
 		queryRaftMap[sdk.Raft_InodeId] = parentID
-		if obj, err = dbc.QuerySortTop(dbc.RaftTable, queryRaftMap, sdk.Raft_InsertTime, sdk.DESC); err != nil {
+
+		if data, err = dbc.QuerySortTop(dbc.RaftTable, queryRaftMap, sdk.Raft_InsertTime, sdk.DESC); err != nil {
 			LOG.Errorf("query chubaodb err: table[%v], queryMap[%v], err[%v]", dbc.RaftTable, queryRaftMap, err)
-			return "", err
+			return
 		}
-		if obj != nil {
-			dentry := obj.(RaftItem).Data.(raft.Dentry)
-			dentryPath = path.Join(dentry.Name, dentryPath)
-			parentID = strconv.FormatUint(dentry.ParentId, 10)
+		if data != nil {
+			var rItem *RaftItem
+			if err = json.Unmarshal(data, rItem); err != nil {
+				LOG.Errorf("unmarshal chubaodb data err: data[%v], err[%v]", string(data), err)
+				return
+			}
+			dMap := rItem.Data.(map[string]interface{})
+			dentryPath = path.Join(dMap[sdk.Raft_InodeName].(string), dentryPath)
+			parentID = dMap[sdk.Raft_ParentId].(string)
 			continue
 		}
 

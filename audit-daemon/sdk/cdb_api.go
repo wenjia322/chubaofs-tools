@@ -125,7 +125,7 @@ func (dbc *DBConfig) QueryAnd(queryMap map[string]interface{}, size int) ([]*Hit
 	return cdbResp.Hits, nil
 }
 
-func (dbc *DBConfig) QuerySortTop(table string, queryMap map[string]interface{}, sortFiled string, seq Sequence) (interface{}, error) {
+func (dbc *DBConfig) QuerySortTop(table string, queryMap map[string]interface{}, sortFiled string, seq Sequence) ([]byte, error) {
 	var query string
 	var count int
 	for k, v := range queryMap {
@@ -156,8 +156,15 @@ func (dbc *DBConfig) QuerySortTop(table string, queryMap map[string]interface{},
 	}
 
 	if cdbResp.Total > 0 {
-		LOG.Warningf("search cdb: url[%v] total[%v]", url, cdbResp.Total)
-		return cdbResp.Hits[0].Doc.Source, nil
+		if cdbResp.Total > 1 {
+			LOG.Warningf("search cdb: url[%v] total[%v]", url, cdbResp.Total)
+		}
+		var data []byte
+		if data, err = json.Marshal(cdbResp.Hits[0].Doc.Source); err != nil {
+			LOG.Errorf("json marshal response data err: data[%v], err[%v]", cdbResp.Hits[0].Doc.Source, err)
+			return nil, err
+		}
+		return data, nil
 	} else {
 		return nil, nil
 	}
