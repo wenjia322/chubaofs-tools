@@ -129,8 +129,9 @@ func (dbc *DBConfig) QuerySortTop(table string, queryMap map[string]interface{},
 	var query string
 	var count int
 	for k, v := range queryMap {
-		query = fmt.Sprintf("%v:%v", k, v)
+		param := fmt.Sprintf("%v:%v", k, v)
 		count++
+		query = query + param
 		if count < len(queryMap) {
 			query = query + " AND "
 		}

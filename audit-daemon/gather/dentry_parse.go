@@ -3,13 +3,13 @@ package gather
 import (
 	"encoding/json"
 	"github.com/google/uuid"
-	"go/types"
 	"path"
 	"strconv"
 	"time"
 
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/sdk"
 	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
+	"github.com/chubaofs/chubaofs-tools/audit-daemon/util/raft"
 )
 
 const rootInode = "1"
@@ -117,16 +117,18 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 			return
 		}
 		if data != nil {
-			rItem := &RaftItem{Data: &types.Interface{}}
+			rItem := &RaftItem{Data: &raft.Dentry{}}
 			if err = json.Unmarshal(data, rItem); err != nil {
 				LOG.Errorf("unmarshal chubaodb data err: data[%v], err[%v]", string(data), err)
 				return
 			}
-			dMap := rItem.Data.(map[string]interface{})
-			dentryPath = path.Join(dMap[sdk.Raft_InodeName].(string), dentryPath)
-			parentID = dMap[sdk.Raft_ParentId].(string)
+			den := rItem.Data.(*raft.Dentry)
+			dentryPath = path.Join(den.Name, dentryPath)
+			parentID = strconv.FormatUint(den.ParentId, 10)
 			continue
 		}
+
+		break
 
 		// todo 3. if not found, search by metanode api
 		// Note: Dentry that has been deleted does not exist in the map. So some file modification records may be lost.
