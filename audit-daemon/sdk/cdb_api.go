@@ -103,7 +103,7 @@ func (dbc *DBConfig) QueryAnd(queryMap map[string]interface{}, size int) ([]*Hit
 		count++
 		query = query + param
 		if count < len(queryMap) {
-			query = query + " AND "
+			query = query + "%20AND%20"
 		}
 	}
 	url := fmt.Sprintf("%v/search/%v?query=%v&size=%v", dbc.Addr, dbc.RaftTable, query, size)
@@ -135,7 +135,7 @@ func (dbc *DBConfig) QuerySortTop(table string, queryMap map[string]interface{},
 		count++
 		query = query + param
 		if count < len(queryMap) {
-			query = query + " AND "
+			query = query + "%20AND%20"
 		}
 	}
 	url := fmt.Sprintf("%v/search/%v?query=%v&sort=%v:%v", dbc.Addr, table, query, sortFiled, seq)
