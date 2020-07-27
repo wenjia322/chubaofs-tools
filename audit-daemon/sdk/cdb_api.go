@@ -99,13 +99,15 @@ func (dbc *DBConfig) QueryAnd(queryMap map[string]interface{}, size int) ([]*Hit
 	var query string
 	var count int
 	for k, v := range queryMap {
-		query = fmt.Sprintf("%v:%v", k, v)
+		param := fmt.Sprintf("%v:%v", k, v)
 		count++
+		query = query + param
 		if count < len(queryMap) {
 			query = query + " AND "
 		}
 	}
 	url := fmt.Sprintf("%v/search/%v?query=%v&size=%v", dbc.Addr, dbc.RaftTable, query, size)
+	LOG.Debugf("send request to chubaodb: url[%v]", url)
 
 	respData, err := SendRequest("GET", url, nil)
 	if err != nil {
