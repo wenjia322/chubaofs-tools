@@ -34,7 +34,7 @@ func InsertDentryInfo(parentID, inode, name, partitionID, vol string, dbConfig *
 	queryMap[sdk.Raft_VolumeName] = vol
 	queryMap[sdk.Raft_ParentId] = parentID
 	queryMap[sdk.Raft_InodeName] = name
-	if objs, _ := dbConfig.QueryAnd(queryMap, 10); len(objs) > 0 {
+	if objs, _ := dbConfig.QueryAnd(dbConfig.DentryTable, queryMap, 10); len(objs) > 0 {
 		LOG.Debugf("dentry exists in dentry table: vol[%v], parentID[%v], name[%v]", vol, parentID, name)
 		return
 	}
@@ -133,6 +133,8 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 		// todo 3. if not found, search by metanode api
 		// Note: Dentry that has been deleted does not exist in the map. So some file modification records may be lost.
 		//var dentryMap map[string]*raft.Dentry
+		//mw := newMetaWrapper(masters, vol)
+		//
 		//if dentryMap, err = sdk.GetAllDentry(metaAddr, partitionID); err != nil {	//todo partitionid 不一直是一个，使用metawrapper的接口获取
 		//	LOG.Errorf("get all dentry from metanode err: addr[%v], pid[%v]", metaAddr, partitionID)
 		//	return

@@ -95,7 +95,7 @@ func (dbc *DBConfig) Query(key, value string, size int) ([]*HitItem, error) {
 	return cdbResp.Hits, nil
 }
 
-func (dbc *DBConfig) QueryAnd(queryMap map[string]interface{}, size int) ([]*HitItem, error) {
+func (dbc *DBConfig) QueryAnd(table string, queryMap map[string]interface{}, size int) ([]*HitItem, error) {
 	var query string
 	var count int
 	for k, v := range queryMap {
@@ -106,7 +106,7 @@ func (dbc *DBConfig) QueryAnd(queryMap map[string]interface{}, size int) ([]*Hit
 			query = query + "%20AND%20"
 		}
 	}
-	url := fmt.Sprintf("%v/search/%v?query=%v&size=%v", dbc.Addr, dbc.RaftTable, query, size)
+	url := fmt.Sprintf("%v/search/%v?query=%v&size=%v", dbc.Addr, table, query, size)
 	LOG.Debugf("send request to chubaodb: url[%v]", url)
 
 	respData, err := SendRequest("GET", url, nil)
