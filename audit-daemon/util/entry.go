@@ -94,17 +94,17 @@ type HitInfo struct {
 }
 
 type RaftItem struct {
-	Op          int8   `json:"_op"`
-	Key         string `json:"_key"`
-	PartitionId string `json:"_partition_id"`
-	VolName     string `json:"_volume"`
-	NodeIP      string `json:"_node_ip"`
+	Op          int8   `json:"r_op"`
+	Key         string `json:"r_key"`
+	PartitionId string `json:"r_partition_id"`
+	VolName     string `json:"r_volume"`
+	NodeIP      string `json:"r_node_ip"`
 	//Crc			int64	`json:"_crc"`
 	//DataSize	int		`json:"_dataSize"`
-	Index string `json:"_index"`
+	Index string `json:"r_index"`
 	//OpType		int		`json:"_opType"`
 	//RecType		int		`json:"_recType"`
-	Term       int   `json:"_term"`
-	InsertTime int64 `json:"_insert_time"`
+	Term       int   `json:"r_term"`
+	InsertTime int64 `json:"r_insert_time"`
 	Data       interface{}
 }

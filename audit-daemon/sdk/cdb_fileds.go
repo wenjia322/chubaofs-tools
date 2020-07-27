@@ -5,14 +5,14 @@ const (
 	Raft_InodeId    = "Inode"
 	Raft_ParentId   = "ParentId"
 	Raft_InodeName  = "Name"
-	Raft_OpType     = "_op"
-	Raft_OpKey      = "_key"
-	Raft_InsertTime = "_insert_time"
-	Raft_VolumeName = "_volume"
-	Raft_Term       = "_term"
-	Raft_Index      = "_index"
-	Raft_Pid        = "_partition_id"
-	Raft_NodeIP     = "_node_ip"
+	Raft_OpType     = "r_op"
+	Raft_OpKey      = "r_key"
+	Raft_InsertTime = "r_insert_time"
+	Raft_VolumeName = "r_volume"
+	Raft_Term       = "r_term"
+	Raft_Index      = "r_index"
+	Raft_Pid        = "r_partition_id"
+	Raft_NodeIP     = "r_node_ip"
 )
 
 // Fields of ChubaoDB Table: dentry

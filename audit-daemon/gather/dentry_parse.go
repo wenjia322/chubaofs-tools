@@ -116,7 +116,7 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 			return
 		}
 		if data != nil {
-			var rItem *RaftItem
+			rItem := &RaftItem{}
 			if err = json.Unmarshal(data, rItem); err != nil {
 				LOG.Errorf("unmarshal chubaodb data err: data[%v], err[%v]", string(data), err)
 				return
