@@ -31,9 +31,9 @@ func InsertDentryInfo(parentID, inode, name, partitionID, vol string, dbConfig *
 		err  error
 	)
 	queryMap := make(map[string]interface{})
-	queryMap[sdk.Raft_VolumeName] = vol
-	queryMap[sdk.Raft_ParentId] = parentID
-	queryMap[sdk.Raft_InodeName] = name
+	queryMap[sdk.D_Vol] = vol
+	queryMap[sdk.D_ParentInode] = parentID
+	queryMap[sdk.D_Name] = name
 	if objs, _ := dbConfig.QueryAnd(dbConfig.DentryTable, queryMap, 10); len(objs) > 0 {
 		LOG.Debugf("dentry exists in dentry table: vol[%v], parentID[%v], name[%v]", vol, parentID, name)
 		return
