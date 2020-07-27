@@ -136,6 +136,7 @@ func (dbc *DBConfig) QuerySortTop(table string, queryMap map[string]interface{},
 		}
 	}
 	url := fmt.Sprintf("%v/search/%v?query=%v&sort=%v:%v", dbc.Addr, table, query, sortFiled, seq)
+	LOG.Debugf("send request to chubaodb: url[%v]", url)
 
 	respData, err := SendRequest("GET", url, nil)
 	if err != nil {

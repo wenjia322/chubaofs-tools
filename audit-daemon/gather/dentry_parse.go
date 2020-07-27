@@ -3,6 +3,7 @@ package gather
 import (
 	"encoding/json"
 	"github.com/google/uuid"
+	"go/types"
 	"path"
 	"strconv"
 	"time"
@@ -96,7 +97,7 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 			return
 		}
 		if data != nil {
-			var dInfo *dentryInfo
+			dInfo := &dentryInfo{}
 			if err = json.Unmarshal(data, dInfo); err != nil {
 				LOG.Errorf("unmarshal chubaodb data err: data[%v], err[%v]", string(data), err)
 			} else {
@@ -116,7 +117,7 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 			return
 		}
 		if data != nil {
-			rItem := &RaftItem{}
+			rItem := &RaftItem{Data: &types.Interface{}}
 			if err = json.Unmarshal(data, rItem); err != nil {
 				LOG.Errorf("unmarshal chubaodb data err: data[%v], err[%v]", string(data), err)
 				return
