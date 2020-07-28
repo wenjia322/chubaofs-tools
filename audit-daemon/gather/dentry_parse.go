@@ -12,11 +12,11 @@ import (
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/util/raft"
 )
 
-const rootInode = "1"
+const rootInode = 1
 
 type dentryInfo struct {
-	ParentInode string `json:"parent_inode"`
-	Inode       string `json:"inode"`
+	ParentInode uint64 `json:"parent_inode"`
+	Inode       uint64 `json:"inode"`
 	Name        string `json:"name"`
 	Path        string `json:"path"`
 	VolName     string `json:"vol_name"`
@@ -24,7 +24,7 @@ type dentryInfo struct {
 	InsertTime  int64  `json:"insert_time"`
 }
 
-func InsertDentryInfo(parentID, inode, name, partitionID, vol string, dbConfig *sdk.DBConfig) {
+func InsertDentryInfo(parentID, inode uint64, name, partitionID, vol string, dbConfig *sdk.DBConfig) {
 	var (
 		path string
 		body []byte
@@ -74,7 +74,7 @@ func getUUid() (index string) {
 	return
 }
 
-func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath string, err error) {
+func FindDentryPath(parentID uint64, name, vol string, dbc *sdk.DBConfig) (dentryPath string, err error) {
 	dentryPath = name
 
 	if parentID == rootInode {
@@ -82,7 +82,7 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 	}
 
 	for {
-		if parentID == "1" {
+		if parentID == rootInode {
 			break
 		}
 
@@ -124,7 +124,7 @@ func FindDentryPath(parentID, name, vol string, dbc *sdk.DBConfig) (dentryPath s
 			}
 			den := rItem.Data.(*raft.Dentry)
 			dentryPath = path.Join(den.Name, dentryPath)
-			parentID = strconv.FormatUint(den.ParentId, 10)
+			parentID = den.ParentId
 			continue
 		}
 

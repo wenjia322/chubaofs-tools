@@ -9,9 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -345,12 +343,11 @@ func parseRaftItem(data []byte, inode uint64, startOffset int64, ip, partitionID
 		crcOffset := 1 + 8 + dataSize
 		crc := binary.BigEndian.Uint32(dataTemp[crcOffset : crcOffset+4])
 		addRaftItemMap(raftItemMap, recordType, dataSize, opType, term, index, crc, partitionID, ip)
-		convertUint64ToStr(raftItemMap)
 		if valBytes, err = json.Marshal(raftItemMap); err != nil {
 			LOG.Errorf("cmd single map value json marshal error: [%v], map[%v]", err, raftItemMap)
 			return
 		}
-		itemIndex := fmt.Sprintf("%v_%v", strconv.FormatUint(inode, 10), strconv.FormatUint(uint64(startOffset)+fileOffset, 10))
+		itemIndex := fmt.Sprintf("%v_%v", inode, uint64(startOffset)+fileOffset)
 		if err = dbConfig.Insert(dbConfig.RaftTable, itemIndex, valBytes); err != nil {
 			LOG.Errorf("send raft item to database err: [%v], inode[%v], offset[%v], body[%v], raftItemMap[%v]", err, inode, uint64(startOffset)+fileOffset, valBytes, raftItemMap)
 			return
@@ -463,34 +460,12 @@ func addRaftItemMap(raftItemMap map[string]interface{}, recordType byte, dataSiz
 	//raftItemMap["_dataSize"] = dataSize
 	//raftItemMap["_opType"] = opType
 	raftItemMap[sdk.Raft_Term] = term
-	raftItemMap[sdk.Raft_Index] = strconv.FormatUint(index, 10)
+	raftItemMap[sdk.Raft_Index] = index
 	//raftItemMap["_crc"] = crc
 	raftItemMap[sdk.Raft_Pid] = partitionID
 	raftItemMap[sdk.Raft_NodeIP] = ip
 	raftItemMap[sdk.Raft_InsertTime] = time.Now().UnixNano() / 1e6
 	raftItemMap[sdk.Raft_VolumeName] = volInfo[partitionID]
-}
-
-func convertUint64ToStr(raftItemMap map[string]interface{}) {
-	convertFun := func(key string) {
-		if value, exist := raftItemMap[key]; exist {
-			switch value.(type) {
-			case uint64:
-				raftItemMap[key] = strconv.FormatUint(value.(uint64), 10)
-			case float64:
-				raftItemMap[key] = strconv.FormatFloat(value.(float64), 'f', -1, 64)
-			default:
-				LOG.Warningf("unsupported type convert: %v", reflect.TypeOf(value))
-				valueBytes, _ := json.Marshal(value)
-				raftItemMap[key] = string(valueBytes)
-			}
-		}
-	}
-	convertFun("PartitionID")
-	convertFun("Inode")
-	convertFun("Start")
-	convertFun("End")
-	convertFun("ParentId")
 }
 
 func findFileByInode(dir string, inode uint64) (filePath string, err error) {

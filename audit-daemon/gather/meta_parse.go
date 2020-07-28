@@ -2,8 +2,6 @@ package gather
 
 import (
 	"encoding/json"
-	"strconv"
-
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/sdk"
 	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
 	"github.com/chubaofs/chubaofs-tools/audit-daemon/util/raft"
@@ -81,7 +79,7 @@ func parseDentry(cmd *OpKvData, dbConfig *sdk.DBConfig, pid string) (raftItemMap
 	raftItemMap = DrawMap(values, ".")
 
 	if cmd.Op == opFSMCreateDentry || cmd.Op == opFSMUpdateDentry {
-		InsertDentryInfo(strconv.FormatUint(den.ParentId, 10), strconv.FormatUint(den.Inode, 10), den.Name, pid, volInfo[pid], dbConfig)
+		InsertDentryInfo(den.ParentId, den.Inode, den.Name, pid, volInfo[pid], dbConfig)
 	}
 	return
 }
