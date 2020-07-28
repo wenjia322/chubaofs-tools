@@ -108,3 +108,17 @@ type RaftItem struct {
 	InsertTime int64 `json:"r_insert_time"`
 	Data       interface{}
 }
+
+type RequestAudit struct {
+	Vol      string
+	Filepath string
+	DBAddr   string
+	DBTable  string
+}
+
+type ResponseAudit struct {
+	Code  int32
+	Msg   string
+	Total int32
+	// todo
+}

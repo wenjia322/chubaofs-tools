@@ -4,17 +4,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
+	"github.com/spf13/cast"
 	"net/http"
 	"sync"
 
-	"github.com/spf13/cast"
+	"github.com/chubaofs/chubaofs-tools/audit-daemon/sdk"
+	. "github.com/chubaofs/chubaofs-tools/audit-daemon/util"
 )
 
 func StartServer(port int) {
 	mux := http.NewServeMux()
 	mux.HandleFunc(PathForwardCmd, forwardCmdReq)
 	mux.HandleFunc(PathSearchDB, searchDBReq)
+	mux.HandleFunc(PathAudit, auditReq)
 
 	server := &http.Server{
 		Addr:    ":" + cast.ToString(port),
@@ -115,4 +117,23 @@ func searchDBReq(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func auditReq(w http.ResponseWriter, r *http.Request) {
+	var (
+		req RequestAudit
+	)
+	if err := ReadReq(r, &req); err != nil {
+		SendErr(w, err)
+		return
+	}
+	queryMap := make(map[string]interface{})
+	queryMap[sdk.D_Vol] = req.Vol
+	queryMap[sdk.D_Path] = req.Filepath
+	//dbConfig := &sdk.DBConfig{Addr: req.DBAddr, DentryTable: req.DBTable}
+	//items, err := dbConfig.QueryAnd(dbConfig.DentryTable, queryMap, 10)
+	//if err != nil {
+	//	SendErr(w, err)
+	//	return
+	//}
 }

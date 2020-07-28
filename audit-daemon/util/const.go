@@ -13,6 +13,7 @@ const (
 	PathCommand    = "/command"
 	PathForwardCmd = "/forward"
 	PathSearchDB   = "/search"
+	PathAudit      = "/audit"
 )
 
 const (

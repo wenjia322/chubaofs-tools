@@ -1,0 +1,7 @@
+{
+  "dbAddr": "",
+  "raftTable": "raft",
+  "dentryTable": "dentry",
+  "masterAddr": "",
+  "metaAddr": ""
+}
